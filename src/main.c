@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
         SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
         SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
-        SDL_RenderCopy(renderer, texture, 0, 0);
+        //SDL_RenderCopy(renderer, texture, NULL, 0);
 
         // Present the frame
         SDL_RenderPresent(renderer);
