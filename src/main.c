@@ -59,12 +59,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_Window* window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
+    SDL_Window* window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_FULLSCREEN_DESKTOP);
     if (!window) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         SDL_Quit();
         return 1;
     }
+
+    // Raise and focus the window
+    SDL_RaiseWindow(window);
+
+    // Get actual window size
+    int actual_width, actual_height;
+    SDL_GetWindowSize(window, &actual_width, &actual_height);
+    printf("Actual window size: %dx%d\n", actual_width, actual_height);
+
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
@@ -131,6 +140,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
         SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
         SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
+        SDL_RenderCopy(renderer, texture, 0, 0);
 
         // Present the frame
         SDL_RenderPresent(renderer);
