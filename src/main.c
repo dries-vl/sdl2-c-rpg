@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
     // Load BMP texture
     SDL_Surface* bmp = SDL_LoadBMP("assets/characters.bmp");
     SDL_Surface* backgroundbmp = SDL_LoadBMP("assets/background.bmp");
-    if (!bmp) {
+    SDL_Surface* titlebmp = SDL_LoadBMP("assets/title.bmp");
+    if (!bmp || !backgroundbmp || !titlebmp) {
         printf("SDL_LoadBMP Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -96,15 +97,19 @@ int main(int argc, char* argv[]) {
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, bmp);
     SDL_Texture* background = SDL_CreateTextureFromSurface(renderer, backgroundbmp);
+    SDL_Texture* title = SDL_CreateTextureFromSurface(renderer, titlebmp);
     SDL_FreeSurface(bmp);
     SDL_FreeSurface(backgroundbmp);
-    if (!texture || !background) {
+    SDL_FreeSurface(titlebmp);
+    if (!texture || !background || !title) {
         printf("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
+    // intitialise state machine
+    int state = 0;
 
     int running = 1;
     Uint32 start_ticks = SDL_GetTicks();
@@ -116,37 +121,50 @@ int main(int argc, char* argv[]) {
     SDL_Rect dest_rect_1 = {0, 32, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
     SDL_Rect src_rect_2 = {0, 64, SPRITE_SIZE, SPRITE_SIZE};
     SDL_Rect dest_rect_2 = {0, 64, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
+    SDL_Rect title_rect = {actual_width / 6, actual_height / 6, (actual_width*2)/3, (actual_height*2)/3};
 
     while (running) {
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
                 running = 0;
             }
+            else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && state == 0) {
+                state = 1;
+            }
         }
 
         Uint32 ticks = SDL_GetTicks() - start_ticks;
 
-        // Update animations
-        src_rect_0.x = SPRITE_SIZE * ((ticks / 100) % 4);
-        dest_rect_0.x = ((ticks / 14) % 768) - 128;
-
-        src_rect_1.x = SPRITE_SIZE * ((ticks / 100) % 4);
-        dest_rect_1.x = -(((ticks / 12) % 768) - 672);
-
-        src_rect_2.x = SPRITE_SIZE * ((ticks / 100) % 4);
-        dest_rect_2.x = ((ticks / 10) % 768) - 128;
-
         // Clear the screen
         SDL_RenderClear(renderer);
 
-        // Render background
-        SDL_RenderCopy(renderer, background, NULL, NULL);
+        // first state(main menu)
+        if (state == 0) {
+            // Render background
+            SDL_RenderCopy(renderer, background, NULL, NULL);
+            // Render menu
+            SDL_RenderCopy(renderer, title, NULL, &title_rect);
+        }
+        // second state(game)
+        else if (state == 1) {
+            // Update animations
+            src_rect_0.x = SPRITE_SIZE * ((ticks / 100) % 4);
+            dest_rect_0.x = ((ticks / 14) % 768) - 128;
 
-        // Render sprites
-        SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
-        SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
-        SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
+            src_rect_1.x = SPRITE_SIZE * ((ticks / 100) % 4);
+            dest_rect_1.x = -(((ticks / 12) % 768) - 672);
 
+            src_rect_2.x = SPRITE_SIZE * ((ticks / 100) % 4);
+            dest_rect_2.x = ((ticks / 10) % 768) - 128;
+
+            // Render background
+            SDL_RenderCopy(renderer, background, NULL, NULL);
+
+            // Render sprites
+            SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
+            SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
+            SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
+        }
         // Present the frame
         SDL_RenderPresent(renderer);
 
