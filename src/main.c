@@ -9,6 +9,8 @@ const int WINDOW_HEIGHT = 480;
 const int SPRITE_SIZE = 32;
 const int SCALE = 4;
 
+#include "gamestate.c"
+
 #ifdef _WIN32
 // Define WinMain to call the regular main function
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
@@ -94,6 +96,7 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    SDL_Surface* bmp_surfaces[3] = {bmp, backgroundbmp, titlebmp};
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, bmp);
     SDL_Texture* background = SDL_CreateTextureFromSurface(renderer, backgroundbmp);
@@ -108,19 +111,18 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    SDL_Texture* textures[3] = {texture, background, title};
+    
     // intitialise state machine
     int state = 0;
 
     int running = 1;
     Uint32 start_ticks = SDL_GetTicks();
     SDL_Event e;
+    SDL_Rect *sprite_atlas_locations;
+    SDL_Rect *sprite_dest_locations;
+    init_gamestate(&sprite_atlas_locations, &sprite_dest_locations, 3);
 
-    SDL_Rect src_rect_0 = {0, 0, SPRITE_SIZE, SPRITE_SIZE};
-    SDL_Rect dest_rect_0 = {0, 0, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
-    SDL_Rect src_rect_1 = {0, 32, SPRITE_SIZE, SPRITE_SIZE};
-    SDL_Rect dest_rect_1 = {0, 32, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
-    SDL_Rect src_rect_2 = {0, 64, SPRITE_SIZE, SPRITE_SIZE};
-    SDL_Rect dest_rect_2 = {0, 64, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
     SDL_Rect title_rect = {actual_width / 6, actual_height / 6, (actual_width*2)/3, (actual_height*2)/3};
 
     while (running) {
@@ -147,23 +149,7 @@ int main(int argc, char* argv[]) {
         }
         // second state(game)
         else if (state == 1) {
-            // Update animations
-            src_rect_0.x = SPRITE_SIZE * ((ticks / 100) % 4);
-            dest_rect_0.x = ((ticks / 14) % 768) - 128;
-
-            src_rect_1.x = SPRITE_SIZE * ((ticks / 100) % 4);
-            dest_rect_1.x = -(((ticks / 12) % 768) - 672);
-
-            src_rect_2.x = SPRITE_SIZE * ((ticks / 100) % 4);
-            dest_rect_2.x = ((ticks / 10) % 768) - 128;
-
-            // Render background
-            SDL_RenderCopy(renderer, background, NULL, NULL);
-
-            // Render sprites
-            SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
-            SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
-            SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
+            render_gamestate(ticks, sprite_atlas_locations, sprite_dest_locations, textures, renderer);
         }
         // Present the frame
         SDL_RenderPresent(renderer);
