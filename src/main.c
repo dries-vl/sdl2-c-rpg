@@ -85,6 +85,7 @@ int main(int argc, char* argv[]) {
 
     // Load BMP texture
     SDL_Surface* bmp = SDL_LoadBMP("assets/characters.bmp");
+    SDL_Surface* backgroundbmp = SDL_LoadBMP("assets/background.bmp");
     if (!bmp) {
         printf("SDL_LoadBMP Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(renderer);
@@ -94,8 +95,10 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, bmp);
+    SDL_Texture* background = SDL_CreateTextureFromSurface(renderer, backgroundbmp);
     SDL_FreeSurface(bmp);
-    if (!texture) {
+    SDL_FreeSurface(backgroundbmp);
+    if (!texture || !background) {
         printf("SDL_CreateTextureFromSurface Error: %s\n", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
@@ -136,11 +139,13 @@ int main(int argc, char* argv[]) {
         // Clear the screen
         SDL_RenderClear(renderer);
 
+        // Render background
+        SDL_RenderCopy(renderer, background, NULL, NULL);
+
         // Render sprites
         SDL_RenderCopy(renderer, texture, &src_rect_0, &dest_rect_0);
         SDL_RenderCopyEx(renderer, texture, &src_rect_1, &dest_rect_1, 0, NULL, SDL_FLIP_HORIZONTAL);
         SDL_RenderCopy(renderer, texture, &src_rect_2, &dest_rect_2);
-        //SDL_RenderCopy(renderer, texture, NULL, 0);
 
         // Present the frame
         SDL_RenderPresent(renderer);
@@ -149,6 +154,7 @@ int main(int argc, char* argv[]) {
     }
 
     SDL_DestroyTexture(texture);
+    SDL_DestroyTexture(background);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
