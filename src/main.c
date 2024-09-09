@@ -3,6 +3,7 @@
 #endif
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <string.h>
 
 const int WINDOW_WIDTH = 640;
 const int WINDOW_HEIGHT = 480;
@@ -116,7 +117,6 @@ int main(int argc, char* argv[]) {
     
     // intitialise state machine
     int state = 0;
-
     int running = 1;
     Uint32 start_ticks = SDL_GetTicks64();
     printf("start_ticks: %d\n", start_ticks);
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
     SDL_Rect *sprite_atlas_locations;
     SDL_Rect *sprite_dest_locations;
     struct Player player = init_gamestate(&sprite_atlas_locations, &sprite_dest_locations, 3);
-
+    printf("%s\n%s\n", player.map[0], player.map[1]);
     SDL_Rect title_rect = {actual_width / 6, actual_height / 6, (actual_width*2)/3, (actual_height*2)/3};
 
     while (running) {
@@ -173,7 +173,6 @@ int main(int argc, char* argv[]) {
         //printf("delta_time: %d\n", SDL_GetTicks64() - start_ticks);
         float delta_time = (float)(SDL_GetTicks64() - ticks - start_ticks);
         ticks = SDL_GetTicks64() - start_ticks;
-        printf("delta_time: %f\n", delta_time);
         // Clear the screen
         SDL_RenderClear(renderer);
 

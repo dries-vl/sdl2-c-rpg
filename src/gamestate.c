@@ -3,9 +3,11 @@
 #endif
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <string.h>
 extern const int SPRITE_SIZE = 32;
 extern const int SCALE = 4;
 const int TILE_SIZE = 20;
+int CHECK = 0;
 
 struct Player {
     int tile_x;
@@ -16,6 +18,7 @@ struct Player {
     int target_y;
     int moving; // 0 or 1
     float move;
+    char **map;
 };
 
 void render_gamestate(Uint32 ticks, SDL_Rect *sprite_atlas_locations, SDL_Rect *sprite_dest_locations, SDL_Texture **textures, SDL_Renderer* renderer, struct Player player) {
@@ -79,31 +82,53 @@ struct Player init_gamestate(SDL_Rect **sprite_atlas_locations, SDL_Rect **sprit
     (*sprite_dest_locations)[0] = (SDL_Rect){0, 0, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
     (*sprite_dest_locations)[1] = (SDL_Rect){0, 32, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
     (*sprite_dest_locations)[2] = (SDL_Rect){0, 64, SPRITE_SIZE * SCALE, SPRITE_SIZE * SCALE};
-
-    // initialize the player
-    struct Player player = {0, 0, 0, 250.0f, 0, 0, FALSE, 0.0};
-    return player;
+    
+    // Allocate memory for the map
+    char **map = malloc(12 * sizeof(char *));
+    for (int i = 0; i < 12; i++) {
+        map[i] = malloc((24 + 1) * sizeof(char));  // +1 for null terminator
+    }
 
     // initialize the map
-    char map[48][24] = {};
+    char *map_data[] = {"                    ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####", 
+                        "####                ####"};
+    // put map data from stack into heap
+    for (int i = 0; i < 12; i++) {
+        strcpy(map[i], map_data[i]);
+    }
+
+    // initialize the player
+    struct Player player = {0, 0, 0, 250.0f, 0, 0, FALSE, 0.0, map};
+    return player;
 }
 
-void player_update(struct Player *playerpointer, float delta_time, char **map) {
+void player_update(struct Player *playerpointer, float delta_time) {
 
     // make a copy of the player for convenience
     struct Player player = *playerpointer;
 
     // update player position
     if (player.tile_x != player.target_x || player.tile_y != player.target_y) {
-
         // check for collision with walls and edges of the map
-        if (player.target_x == -1 || player.target_x == 47 || player.target_y == -1 || player.target_y == 23) { // if the player is at the edge of the map
+        if (player.target_x == -1 || player.target_x == 24 || player.target_y == -1 || player.target_y == 12) { // if the player is at the edge of the map
             player.target_x = player.tile_x;
             player.target_y = player.tile_y;
+            printf("edge of map\n");
         }
-        if (map[player.target_x][player.target_y] == 1) { // if target is a wall
+        if (player.map[player.target_y][player.target_x] == '#') { // if target is a wall
             player.target_x = player.tile_x;
             player.target_y = player.tile_y;
+            printf("wall\n");
         }
 
         player.move += delta_time / player.speed; // percent of the way to the target
