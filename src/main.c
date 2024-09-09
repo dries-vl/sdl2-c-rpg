@@ -61,7 +61,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    SDL_Window* window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    SDL_Window* window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_FULLSCREEN_DESKTOP); // for fullscreen
+    //SDL_Window* window = SDL_CreateWindow("SDL2", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0); // for windowed
     if (!window) {
         printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
         SDL_Quit();
@@ -117,15 +118,21 @@ int main(int argc, char* argv[]) {
     int state = 0;
 
     int running = 1;
-    Uint32 start_ticks = SDL_GetTicks();
+    Uint32 start_ticks = SDL_GetTicks64();
+    printf("start_ticks: %d\n", start_ticks);
+    Uint32 ticks = 0;
     SDL_Event e;
     SDL_Rect *sprite_atlas_locations;
     SDL_Rect *sprite_dest_locations;
-    init_gamestate(&sprite_atlas_locations, &sprite_dest_locations, 3);
+    struct Player player = init_gamestate(&sprite_atlas_locations, &sprite_dest_locations, 3);
 
     SDL_Rect title_rect = {actual_width / 6, actual_height / 6, (actual_width*2)/3, (actual_height*2)/3};
 
     while (running) {
+        //printf("player.move: %d\n", player.move);
+        //printf("player.target_x: %d\n", player.target_x);
+        //printf("player.target_y: %d\n", player.target_y);
+        //printf("player.moving: %d\n", player.moving);
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_QUIT || (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)) {
                 running = 0;
@@ -133,10 +140,40 @@ int main(int argc, char* argv[]) {
             else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RETURN && state == 0) {
                 state = 1;
             }
+            else if (state == 1) {
+                if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_UP && !player.moving) {
+                    player.target_y = player.tile_y - 1;
+                    player.direction = 0;
+                    player.moving = TRUE;
+                }
+                else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_DOWN && !player.moving) {
+                    player.target_y = player.tile_y + 1;
+                    player.direction = 2;
+                    player.moving = TRUE;
+                }
+                else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_LEFT && !player.moving) {
+                    player.target_x = player.tile_x - 1;
+                    player.direction = 3;
+                    player.moving = TRUE;
+                }
+                else if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_RIGHT && !player.moving) {
+                    player.target_x = player.tile_x + 1;
+                    player.direction = 1;
+                    player.moving = TRUE;
+                }
+                else if (e.type == SDL_KEYUP && (e.key.keysym.sym == SDLK_DOWN || e.key.keysym.sym == SDLK_UP)) {
+                    player.moving = FALSE;
+                }
+                else if (e.type == SDL_KEYUP && (e.key.keysym.sym == SDLK_RIGHT || e.key.keysym.sym == SDLK_LEFT)) {
+                    player.moving = FALSE;
+                }
+            }
         }
-
-        Uint32 ticks = SDL_GetTicks() - start_ticks;
-
+        //printf("delta_time: %d\n", ticks);
+        //printf("delta_time: %d\n", SDL_GetTicks64() - start_ticks);
+        float delta_time = (float)(SDL_GetTicks64() - ticks - start_ticks);
+        ticks = SDL_GetTicks64() - start_ticks;
+        printf("delta_time: %f\n", delta_time);
         // Clear the screen
         SDL_RenderClear(renderer);
 
@@ -149,14 +186,16 @@ int main(int argc, char* argv[]) {
         }
         // second state(game)
         else if (state == 1) {
-            render_gamestate(ticks, sprite_atlas_locations, sprite_dest_locations, textures, renderer);
+            render_gamestate(ticks, sprite_atlas_locations, sprite_dest_locations, textures, renderer, player);
+            player_update(&player, delta_time);
         }
         // Present the frame
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(100);
+        SDL_Delay(16);
     }
-
+    free(sprite_atlas_locations);
+    free(sprite_dest_locations);
     SDL_DestroyTexture(texture);
     SDL_DestroyTexture(background);
     SDL_DestroyRenderer(renderer);
